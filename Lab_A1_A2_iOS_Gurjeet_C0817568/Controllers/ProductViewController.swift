@@ -31,7 +31,6 @@ class ProductViewController: UIViewController {
         txtPrice.text = ""
         txtProductDescription.text = ""
         
-     //   txtProductDescription.layer.borderColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.2) // adding border color
         txtProductDescription.layer.borderWidth = 1.0 // adding border width
         txtProductDescription.layer.cornerRadius = 5.0 // adding border radius
         if selectedProduct != nil{ // if selected product
@@ -91,12 +90,12 @@ class ProductViewController: UIViewController {
             } catch {
                 print("Error saving the product \(error.localizedDescription)")  // print error
             }
-            performSegue(withIdentifier: "dismissToProductViewController", sender: self) // dismiss modal popup view
+            performSegue(withIdentifier: "dismissToProductViewController", sender: self) // dismiss modal view
         }
     }
 
     @IBAction func cancelClick(_ sender: Any) {
-        dismiss(animated: true, completion: nil) // dismiss if cancel
+        dismiss(animated: true, completion: nil) // dismiss in case of cancel
     }
 }
 

@@ -47,6 +47,17 @@ class ProductTableViewController: UITableViewController {
     }
     
    
+    @IBAction func changeMode(_ sender: UIBarButtonItem) {
+        if isProductSelection {
+                   navigationItem.title = "Providers" // top title as Providers
+                   sender.title = "Show Products" // bottom button to show products
+               }else{
+                   navigationItem.title = "Products" // top title as Products
+                   sender.title = "Show Providers"  // bottom button to show providers
+               }
+               isProductSelection = !isProductSelection // toggle product/provider mode
+               tableView.reloadData() // reload tableview
+    }
     
     
     // MARK: - Table view functions
@@ -55,19 +66,25 @@ class ProductTableViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-       
+            if isProductSelection{
             return products.count // get the total products
-        
+            }else{
+                return providers.count // get the total providers
+            }
     }
     
      override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
            let cell = tableView.dequeueReusableCell(withIdentifier: "product_segue", for: indexPath)
-          
+           if isProductSelection {
                cell.textLabel?.text = products[indexPath.row].name! // set title as product name
              cell.detailTextLabel?.text = String((products[indexPath.row].parentProvider?.name)! )// set detail as provider name
 
                cell.imageView!.image = nil
-           
+           }else{
+               cell.textLabel?.text = providers[indexPath.row].name! // set title as provider name
+            cell.detailTextLabel?.text = String(providers[indexPath.row].products!.count)// set detail as provider count of products
+               cell.imageView!.image = UIImage(systemName: "folder.fill")
+           }
            
            if indexPath.row % 2 != 0{ // even odd coloring
                cell.backgroundColor = .systemBlue // background blue
@@ -93,7 +110,7 @@ class ProductTableViewController: UITableViewController {
     // Override to support editing the table view.
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete { // if editing style is delete
-            
+            if isProductSelection { // if product selection true
                 deleteProduct(product: products[indexPath.row]) // deletes the product selected
                 products.remove(at: indexPath.row) // removes the product from the global list
                for (provider) in providers{ // iterates all the providers
@@ -101,7 +118,10 @@ class ProductTableViewController: UITableViewController {
                         deleteProvider(provider: provider) // deletes the provider
                     }
                 }
-            
+             }else{
+                 deleteProvider(provider: providers[indexPath.row]) // deletes the provider
+                 providers.remove(at: indexPath.row) // removes the provider from the global list
+             }
             // Delete the row from the datasource
             tableView.deleteRows(at: [indexPath], with: .fade) // remove rows from the list
             loadProviders()// loads provider from core data
@@ -111,10 +131,13 @@ class ProductTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if !selectMode { // if not in select mode
-            
+            if(isProductSelection){ // if in product selection is true
                 selectedProduct = products[indexPath.row] // select product
                 performSegue(withIdentifier: "toEditProduct", sender: self) // edit product segue
-            
+            }else{
+                selectedProvider = providers[indexPath.row] // select provider
+                performSegue(withIdentifier: "toProviderProducts", sender: self) // providers product segue
+            }
         }
     }
     
@@ -236,7 +259,9 @@ class ProductTableViewController: UITableViewController {
             }
         }
         
-        //here will need to add providers segue when add provider controller later
+        if let destination = segue.destination as? ProviderProductsTableViewController  { // when destination is providerProductsTableViewController
+            destination.selectedProvider = selectedProvider // set the selected provider
+        }
     }
     
     @IBAction func unwindToProductViewController(_ unwindSegue: UIStoryboardSegue) { // when modal product dismissed
@@ -249,9 +274,11 @@ class ProductTableViewController: UITableViewController {
     func showSearchBar() {
         searchController.searchBar.delegate = self // sets the delegate
         searchController.obscuresBackgroundDuringPresentation = false // set false obscure background during presentation
-       
+        if isProductSelection {//if products selection
             searchController.searchBar.placeholder = "Search Product" // set searchbar placeholder
-        
+        }else{
+            searchController.searchBar.placeholder = "Search Provider" // set searchbar placeholder
+        }
         navigationItem.searchController = searchController // set searchbar controller
         definesPresentationContext = true // set presentation context
         searchController.searchBar.searchTextField.textColor = .lightGray // set search bar text color
@@ -270,20 +297,26 @@ extension ProductTableViewController: UISearchBarDelegate {
         }else{
             // add predicate if name & description contains searchbar text
            
-            
+            if isProductSelection{ // if product selection true
                 // search by product name or description if contains searchbar text
                 let predicate = NSPredicate(format: "%K CONTAINS[cd] %@ OR %K CONTAINS[cd] %@", argumentArray:["name", searchBar.text!, "p_description", searchBar.text!] )
                 loadProducts(predicate: predicate)  // load products from core data
-            
+            }else{
+                // search by provider name if contains searchbar text
+                let predicate = NSPredicate(format: "%K CONTAINS[cd] %@", argumentArray:["name", searchBar.text!] )
+                loadProviders(predicate: predicate)  // load providers from core data
+            }
                 
         }
     }
     // when the cancel button is pressed
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.text = "" // erase the search bar content
-        
+        if isProductSelection{ // if product selection true
             loadProducts() // load the products from coredata
-        
+        }else{
+            loadProviders()   // load providers from coredata
+        }
     }
     
 }
